@@ -62,12 +62,7 @@ export default async function NotesPage(props: PageProps) {
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <NotesClient
-        initialPage={fetchParams.page ?? 1}
-        initialSearch={fetchParams.search ?? ''}
-        perPage={fetchParams.perPage ?? 12}
-        initialTag={tag}
-      />
+      <NotesClient tag={tag} />
     </HydrationBoundary>
   );
 }

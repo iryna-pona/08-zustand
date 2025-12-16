@@ -15,20 +15,15 @@ import Loading from '@/app/loading';
 import css from './NotesPage.module.css';
 
 interface Props {
-  initialPage: number;
-  initialSearch: string;
-  perPage: number;
-  initialTag?: string;
+  tag?: string;
 }
 
-export default function NotesClient({ initialPage, initialSearch, perPage, initialTag }: Props) {
-  const PER_PAGE = perPage ?? 12;
+export default function NotesClient({ tag = '' }: Props) {
+  const PER_PAGE = 12;
 
-  const [page, setPage] = useState(initialPage);
-  const [search, setSearch] = useState(initialSearch);
+  const [page, setPage] = useState(1);
+  const [search, setSearch] = useState('');
   const [debouncedSearch] = useDebounce(search, 500);
-
-  const tag = initialTag ?? '';
 
   const params: FetchNotesParams = {
     search: debouncedSearch,
@@ -39,7 +34,7 @@ export default function NotesClient({ initialPage, initialSearch, perPage, initi
   };
 
   const { data, isLoading, isFetching, isError, error } = useQuery<FetchNotesResponse, Error>({
-    queryKey: ['notes', params.search, params.page, tag],
+    queryKey: ['notes', debouncedSearch, page, tag],
     queryFn: () => fetchNotes(params),
     refetchOnMount: false,
     staleTime: 1000 * 60,
@@ -54,13 +49,12 @@ export default function NotesClient({ initialPage, initialSearch, perPage, initi
   if (isLoading) return <Loading />;
   if (isError && error) return <ErrorMessage error={error} />;
   if (!data) return <Loading />;
-  if (data.notes.length === 0 && !isFetching) return <p>No notes found.</p>;
 
   return (
     <div className={css.app}>
       <header className={css.toolbar}>
         <SearchBox value={search} onChange={handleSearch} />
-        {data?.totalPages && data.totalPages > 1 && (
+        {data.totalPages > 1 && (
           <Pagination pageCount={data.totalPages} currentPage={page} onPageChange={setPage} />
         )}
         <Link href="/notes/action/create" className={css.button}>
@@ -68,8 +62,11 @@ export default function NotesClient({ initialPage, initialSearch, perPage, initi
         </Link>
       </header>
 
-      <NoteList notes={data?.notes ?? []} isLoading={isLoading} isFetching={isFetching} />
+      {data.notes.length === 0 && !isFetching && <p>No notes found.</p>}
 
+      {data.notes.length > 0 && (
+        <NoteList notes={data.notes} isLoading={isLoading} isFetching={isFetching} />
+      )}
     </div>
   );
 }
